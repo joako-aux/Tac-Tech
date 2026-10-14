@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.tac_tech">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+
+        <!-- Pantalla Principal / Inicio de Sesión -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Módulo de Administración -->
+        <activity
+            android:name=".ui.admin.AdminActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.admin.SupportTechniciansActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.admin.SupportAccountsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.admin.ClientsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.admin.ClientAccountsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.admin.AdminWorkOrdersActivity"
+            android:exported="false" />
+
+        <!-- Módulo de Soporte Técnico -->
+        <activity
+            android:name=".ui.support.SupportActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.support.SupportWorkOrdersActivity"
+            android:exported="false" />
+
+        <!-- Módulo de Clientes -->
+        <activity
+            android:name=".ui.client.ClientActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.client.ClientWorkOrdersActivity"
+            android:exported="false" />
+
+    </application>
+
+</manifest>
