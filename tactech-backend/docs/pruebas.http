@@ -1,0 +1,148 @@
+### Pruebas rapidas del backend (IntelliJ HTTP Client, o copiar a Postman)
+
+### Salud del servicio
+GET http://localhost:8080/api/salud
+
+### Salud verificada con WebClient (llamada reactiva)
+GET http://localhost:8080/api/salud/verificar
+
+### Login administrador
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "correo": "admin@tactech.cl", "clave": "admin123" }
+
+### Login con clave mala -> 401
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "correo": "admin@tactech.cl", "clave": "otra" }
+
+### Listar usuarios
+GET http://localhost:8080/api/usuarios
+
+### Crear tecnico
+POST http://localhost:8080/api/usuarios
+Content-Type: application/json
+
+{ "nombre": "Moise Fonseca", "correo": "moise@tactech.cl", "clave": "tecnico123", "rol": "TECNICO" }
+
+### Crear cliente (debe tener empresa)
+POST http://localhost:8080/api/usuarios
+Content-Type: application/json
+
+{ "nombre": "Ana Rojas", "correo": "ana@clinica.cl", "clave": "cliente123", "rol": "CLIENTE", "empresaId": 1 }
+
+### Crear equipo
+PUT http://localhost:8080/api/equipos/eq-demo-1
+Content-Type: application/json
+
+{ "id": "eq-demo-1", "nombre": "Split muro", "modelo": "MSAFB-12", "serie": "MID-12345", "propiedad": "ARRENDADO" }
+
+### Crear ticket
+PUT http://localhost:8080/api/tickets/t-demo-1
+Content-Type: application/json
+
+{
+  "id": "t-demo-1", "numero": 1, "titulo": "Equipo no enfria",
+  "descripcion": "El split del segundo piso no baja de 26 grados",
+  "cliente": "Clinica Las Condes", "direccion": "Av. Apoquindo 1234, Las Condes",
+  "prioridad": "ALTA", "estado": "ABIERTO", "equipoId": "eq-demo-1",
+  "tecnicoCorreo": "tecnico@tactech.cl"
+}
+
+### Validacion: titulo muy corto -> 400 con el error por campo
+POST http://localhost:8080/api/tickets
+Content-Type: application/json
+
+{ "id": "t-malo", "numero": 2, "titulo": "Mal", "descripcion": "corta", "cliente": "", "direccion": "x",
+  "prioridad": "ALTA", "estado": "ABIERTO", "equipoId": "eq-demo-1" }
+
+### Tickets pendientes (vista administrador)
+GET http://localhost:8080/api/tickets?estado=PENDIENTES
+
+### Tickets de un tecnico
+GET http://localhost:8080/api/tickets?tecnico=tecnico@tactech.cl
+
+### Resumen para el panel
+GET http://localhost:8080/api/tickets/resumen
+
+### Cerrar sin guias -> 409 (regla de negocio)
+PUT http://localhost:8080/api/tickets/t-demo-1/estado
+Content-Type: application/json
+
+{ "estado": "CERRADO", "comentario": "Se cambio el capacitor" }
+
+### Emitir guia
+PUT http://localhost:8080/api/guias/g-demo-1
+Content-Type: application/json
+
+{
+  "id": "g-demo-1", "numero": 1, "ticketId": "t-demo-1", "equipoId": "eq-demo-1",
+  "direccion": "Av. Apoquindo 1234", "latitud": -33.4172, "longitud": -70.6033,
+  "tecnico": "Tecnico Demo", "trabajoRealizado": "Cambio de capacitor y limpieza de filtros",
+  "repuestos": "Capacitor 35uF", "observaciones": "", "recibidoPor": "Ana Rojas",
+  "fotos": [ { "id": "f-demo-1", "uri": "content://cl.duoc.serviciotecnico.fileprovider/fotos/demo.jpg" } ]
+}
+
+### Ahora si se puede cerrar
+PUT http://localhost:8080/api/tickets/t-demo-1/estado
+Content-Type: application/json
+
+{ "estado": "CERRADO", "comentario": "Se cambio el capacitor" }
+
+### ===== Flujo de solicitudes =====
+
+### Crear empresa (RUT con digito verificador valido)
+POST http://localhost:8080/api/empresas
+Content-Type: application/json
+
+{ "nombre": "Supermercado Sur", "rut": "77.654.321-7", "direccion": "Gran Avenida 5000, San Miguel", "telefono": "+56912345678" }
+
+### RUT invalido -> 400
+POST http://localhost:8080/api/empresas
+Content-Type: application/json
+
+{ "nombre": "Empresa Mala", "rut": "77.654.321-1", "direccion": "Calle 123, Santiago" }
+
+### El cliente crea una solicitud (nace POR_CONFIRMAR)
+POST http://localhost:8080/api/solicitudes
+Content-Type: application/json
+
+{
+  "id": "s-demo-1", "clienteCorreo": "cliente@tactech.cl",
+  "titulo": "Camara de frio no enfria", "descripcion": "La camara de frio marca 12 grados desde la manana",
+  "direccion": "Estoril 450, Las Condes", "equipoNombre": "Camara de frio", "equipoModelo": "CF-2000",
+  "equipoSerie": "CF-2024-001", "propiedad": "PROPIO_DEL_CLIENTE", "estado": "POR_CONFIRMAR"
+}
+
+### Bandeja del administrador
+GET http://localhost:8080/api/solicitudes?estado=POR_CONFIRMAR
+
+### El administrador confirma: crea el ticket asignado
+POST http://localhost:8080/api/solicitudes/s-demo-1/confirmar
+Content-Type: application/json
+
+{ "tecnicoCorreo": "tecnico@tactech.cl", "prioridad": "ALTA" }
+
+### Cancelar una solicitud ya confirmada -> 409
+PUT http://localhost:8080/api/solicitudes/s-demo-1/cancelar
+Content-Type: application/json
+
+{ "motivo": "La cree por error" }
+
+### Tickets del tecnico / del cliente
+GET http://localhost:8080/api/tickets?tecnico=tecnico@tactech.cl
+
+###
+GET http://localhost:8080/api/tickets?cliente=cliente@tactech.cl
+
+### Reporte sin foto ni ubicacion -> 400
+PUT http://localhost:8080/api/guias/g-sin-evidencia
+Content-Type: application/json
+
+{
+  "id": "g-sin-evidencia", "numero": 9, "ticketId": "t-demo-1", "equipoId": "eq-demo-1",
+  "direccion": "Av. Apoquindo 1234", "tecnico": "Tecnico Demo",
+  "trabajoRealizado": "Revision general del equipo", "recibidoPor": "Ana Rojas", "fotos": []
+}

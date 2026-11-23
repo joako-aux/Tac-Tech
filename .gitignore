@@ -1,15 +1,5 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# Archivos del sistema y del IDE (no se suben)
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+.idea/
+*.iml
 local.properties
