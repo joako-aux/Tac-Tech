@@ -1,3 +1,12 @@
+import java.util.Properties
+
+// Datos de la llave de firma: se leen de keystore.properties (archivo local que NO se sube a GitHub).
+// Ver keystore.properties.example.
+val firma = Properties().apply {
+    val archivo = rootProject.file("keystore.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -23,9 +32,20 @@ android {
         buildConfigField("String", "API_URL", "\"$apiUrl\"")
     }
 
+    // Firma del APK de release con la llave del equipo (release/tactech-release.jks)
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("release/tactech-release.jks")
+            storePassword = firma.getProperty("storePassword")
+            keyAlias = firma.getProperty("keyAlias")
+            keyPassword = firma.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

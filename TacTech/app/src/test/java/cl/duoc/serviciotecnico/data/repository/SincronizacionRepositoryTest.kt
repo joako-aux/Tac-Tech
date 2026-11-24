@@ -23,7 +23,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -118,7 +117,7 @@ class SincronizacionRepositoryTest {
         api.fallaRed = errorHttp(500)
 
         assertFalse(repo.sincronizar())
-        advanceUntilIdle()
+        runCurrent()
 
         assertTrue(tickets.buscar("t-1")!!.pendienteSync)
         assertEquals("El servidor respondio 500", repo.estado.value.error)
@@ -131,7 +130,7 @@ class SincronizacionRepositoryTest {
         api.fallaRed = IOException("timeout")
 
         assertFalse(repo.sincronizar())
-        advanceUntilIdle()
+        runCurrent()
 
         assertEquals("Sin conexion con el servidor", repo.estado.value.error)
     }
@@ -144,7 +143,7 @@ class SincronizacionRepositoryTest {
         val repo = crear(backgroundScope)
 
         assertFalse(repo.sincronizar())
-        advanceUntilIdle()
+        runCurrent()
 
         assertEquals("No se pudo sincronizar", repo.estado.value.error)
     }
@@ -239,14 +238,14 @@ class SincronizacionRepositoryTest {
         tickets.guardar(ticket(pendienteSync = true))
         guias.guardar(guia(pendienteSync = true))
         val repo = crear(backgroundScope)
-        advanceUntilIdle()
+        runCurrent()
 
         assertTrue(repo.estado.value.enLinea)
         assertEquals(2, repo.estado.value.pendientes)
         assertNull(repo.estado.value.ultimaSync)
 
         repo.sincronizar()
-        advanceUntilIdle()
+        runCurrent()
 
         assertEquals(0, repo.estado.value.pendientes)
         assertNotNull(repo.estado.value.ultimaSync)

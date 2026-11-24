@@ -8,6 +8,8 @@ captures/
 .externalNativeBuild/
 .cxx/
 *.apk
+# Excepcion: el APK firmado de la entrega si se sube (IE 3.3.1)
+!release/app-release.apk
 *.aab
 *.ap_
 *.dex
@@ -15,3 +17,5 @@ captures/
 *.log
 *.hprof
 app/release/
+# Contrasenas de la llave de firma (nunca se suben)
+keystore.properties
