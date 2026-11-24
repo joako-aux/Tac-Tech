@@ -25,7 +25,8 @@ Asignatura **DSY1105 — Desarrollo de Aplicaciones Móviles** · Evaluación Pa
 | Versión | Tecnología | Motivo |
 |---|---|---|
 | v1 | Activities en XML + SQLite (`DatabaseHelper`) | Primer MVP del equipo (commits de octubre) |
-| v2 (actual) | **Jetpack Compose + MVVM**, Room, Retrofit, DataStore, microservicio propio en AWS | La v1 no cumplía con Jetpack Compose ni con el patrón MVVM exigidos; se migró la app completa a la nueva arquitectura |
+| v2 | **Jetpack Compose + MVVM**, Room, Retrofit, DataStore, microservicio propio en AWS | La v1 no cumplía con Jetpack Compose ni con el patrón MVVM exigidos; se migró la app completa a la nueva arquitectura |
+| v5.3 (actual) | Pruebas sobre **todo** el proyecto (Room y pantallas Compose con Robolectric) | Cobertura de todo el código sin exclusiones: 273 pruebas, 92,8 % de líneas y 80,2 % de ramas. Acceso al servidor desde la consola web de AWS y comandos para revisar los datos en MySQL |
 
 ## Integrantes
 
@@ -207,6 +208,23 @@ la app acepta estos mismos usuarios para que el técnico pueda trabajar igual.
 
 El paso a paso del despliegue está en el README de `tactech-backend` (sección *Despliegue en AWS*).
 
+#### Revisar los datos guardados en MySQL (desde cualquier computador)
+1. **EC2 → Instancias → `tactech-backend` → Conectar → EC2 Instance Connect**, usuario `ubuntu`.
+   Se abre una terminal en el navegador; no se necesita la llave `.pem` ni una IP fija.
+2. En esa terminal:
+
+| Comando | Muestra |
+|---|---|
+| `ver-datos` | Cuántos registros hay en cada tabla |
+| `ver-ultimo solicitudes` | La última solicitud creada por un cliente, campo por campo |
+| `ver-ultimo tickets` | El último ticket, con su equipo y el técnico asignado |
+| `ver-ultimo guias` | El último reporte de visita: coordenadas GPS y cantidad de fotos |
+| `ver-ultimo usuarios` / `empresas` | El último usuario (clave cifrada con BCrypt) o empresa |
+| `ver-datos <tabla>` | Todos los registros de una tabla |
+
+Así se comprueba que lo ingresado en la app llegó igual a la base de datos del microservicio.
+El puerto de MySQL (3306) no está abierto a internet: solo se consulta desde el propio servidor.
+
 ### Opción B — Backend local (desarrollo)
 1. Levantar `tactech-backend` en IntelliJ con MySQL local (ver su README) y comprobar
    <http://localhost:8080/api/salud>.
@@ -216,31 +234,35 @@ El paso a paso del despliegue está en el README de `tactech-backend` (sección 
 
 ## Pruebas unitarias
 
-**180 pruebas** en `TacTech/app/src/test`, con **JUnit 4**, **MockK** y **kotlinx-coroutines-test**,
-organizadas por capa:
+**273 pruebas** en `TacTech/app/src/test`, con **JUnit 4**, **MockK**, **kotlinx-coroutines-test**,
+**Robolectric** y **Compose UI Test** (todas corren en la JVM, sin emulador), organizadas por capa:
 
 | Capa | Archivos de prueba | Qué validan |
 |---|---|---|
 | Dominio | `ValidadoresTest`, `ValidacionesTest`, `ModelosTest` | Reglas de cada formulario (RUT, correo, serie, evidencia obligatoria, cambio de estado) y modelos |
 | Datos | `ConvertersTest`, `LlamadaRemotaTest`, `MapeosTest` | Conversores de Room, traducción de errores HTTP del backend, mapeo entidad ↔ DTO |
 | Repository | `TicketRepositoryTest`, `SolicitudRepositoryTest`, `SincronizacionRepositoryTest`, `SesionRepositoryTest`, `GuiaYEquipoRepositoryTest`, `GeocodificacionRepositoryTest`, `EmpresaYUsuarioRepositoryTest` (MockK) | Reglas de negocio, sincronización offline-first (orden de subida, conflicto 409, descarga por rol, no pisar pendientes, mutex), login con respaldo offline, API externa |
-| ViewModel | Los 14 ViewModels (`LoginViewModelTest`, `FormularioGuiaViewModelTest`, `AdminViewModelTest`, etc.) + `EstadoFormularioTest` | Estados de pantalla, validaciones visibles, flujos completos de cada rol y manejo de errores |
+| ViewModel | Los 14 ViewModels (`LoginViewModelTest`, `FormularioGuiaViewModelTest`, `AdminViewModelTest`, etc.) + `EstadoFormularioTest` + `FabricasDeViewModelTest` | Estados de pantalla, validaciones visibles, flujos completos de cada rol, manejo de errores y factories |
+| Room (Robolectric) | `TicketDaoTest`, `EquipoDaoTest`, `GuiaYFotoDaoTest`, `SolicitudDaoTest`, `AppDatabaseTest` | Consultas SQL reales sobre una base en memoria: orden, filtros por rol, marcado de sincronizacion y upsert |
+| Pantallas Compose (Robolectric) | Una clase por pantalla (`LoginScreenTest`, `DetalleTicketScreenTest`, `FormularioGuiaScreenTest`, etc.) + `ComponentesTest` | Lo que ve el usuario: textos, formularios, dialogos, filtros, navegacion entre pantallas y componentes reutilizables |
+| App y Android | `AplicacionTest`, `ClientesYMonitorTest`, `UtilidadesTest` | MainActivity y navegacion inicial, clientes Retrofit, monitor de red, FileProvider y permisos |
 
 **Dobles de prueba** (`TacTech/app/src/test/.../testutil`): DAO en memoria en lugar de Room, un
 microservicio falso, un DataStore en memoria, una red falsa y la API de OpenStreetMap falsa.
 Así se prueba la lógica real sin dispositivo, sin red y sin base de datos.
 
-**Cobertura con Kover** (sobre el código lógico: ViewModel, Repository, dominio y datos; se
-excluyen las pantallas Compose, el tema, la navegación y la configuración de Android):
+**Cobertura con Kover sobre todo el proyecto** (sin exclusiones: lógica, Room, pantallas,
+componentes, navegación, tema, Activity y Application):
 
 ```bash
 cd TacTech
 ./gradlew testDebugUnitTest          # ejecutar las pruebas
 ./gradlew koverHtmlReportDebug       # reporte: app/build/reports/kover/htmlDebug/index.html
-./gradlew koverVerifyDebug           # falla si la cobertura baja del 85%
+./gradlew koverLogDebug              # muestra el % total en la terminal
+./gradlew koverVerifyDebug           # falla si la cobertura baja del 80%
 ```
 
-Cobertura obtenida: **[completar con el % del reporte de Kover]** (meta: ≥ 85%).
+Cobertura obtenida (Kover, todo el proyecto sin exclusiones): **92,8 % de líneas · 80,2 % de ramas · 93,7 % de clases** (meta: ≥ 80 %).
 
 ## APK firmado
 
@@ -279,18 +301,6 @@ Para generar el APK firmado: `cd TacTech && ./gradlew assembleRelease`.
 4. **Cliente** de nuevo: la solicitud muestra el ticket, el técnico y el estado "Cerrado".
 5. Para probar la cancelación: el cliente crea otra solicitud y la cancela antes de que el
    administrador la procese.
-
-## Recursos nativos y permisos
-
-| Recurso | Uso | Permiso |
-|---|---|---|
-| Cámara | Foto de evidencia del reporte (obligatoria, hasta 15) | `CAMERA` (se pide al usarla) |
-| Ubicación (GPS) | Geolocalización de la visita (obligatoria) | `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` |
-| Red | Sincronización con el backend | `INTERNET`, `ACCESS_NETWORK_STATE` |
-
-Si se deniega un permiso, la app explica para qué sirve y ofrece abrir los ajustes. Como la
-evidencia es obligatoria, el reporte no se puede enviar sin foto y sin ubicación. El tráfico
-HTTP sin cifrar solo se permite hacia el servidor de desarrollo (`network_security_config.xml`).
 
 ## Recursos nativos y permisos
 

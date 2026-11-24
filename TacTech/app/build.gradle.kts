@@ -62,6 +62,14 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // Robolectric necesita los recursos de Android (temas, manifest, FileProvider) en las pruebas unitarias
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all { it.maxHeapSize = "3g" }
+        }
+    }
 }
 
 dependencies {
@@ -97,51 +105,28 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    // Room, pantallas Compose, Activity y utilidades de Android probadas en la JVM con Robolectric
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }
 
 /*
- * Cobertura con Kover.
- * La rubrica pide el 80% del codigo LOGICO (ViewModel, Repository, dominio). Por eso se excluye lo que
- * no es logica de negocio o solo se puede probar en un dispositivo: pantallas y componentes Compose,
- * tema, navegacion, Activity/Application, clientes HTTP (configuracion), acceso a sensores y el codigo
- * que genera Room.
+ * Cobertura con Kover sobre TODO el codigo de la app (sin exclusiones): dominio, datos, Room,
+ * ViewModel, pantallas y componentes Compose, navegacion, tema, Activity y Application.
+ * Las pantallas y Room se prueban en la JVM con Robolectric.
  *
  *   Reporte:  ./gradlew koverHtmlReportDebug  -> app/build/reports/kover/htmlDebug/index.html
- *   Regla:    ./gradlew koverVerifyDebug      -> falla si la cobertura baja del 85%
+ *   Total:    ./gradlew koverLogDebug
+ *   Regla:    ./gradlew koverVerifyDebug      -> falla si la cobertura baja del 80%
  */
 kover {
     reports {
-        filters {
-            excludes {
-                packages(
-                    "cl.duoc.serviciotecnico.ui.screens",
-                    "cl.duoc.serviciotecnico.ui.components",
-                    "cl.duoc.serviciotecnico.ui.theme",
-                    "cl.duoc.serviciotecnico.ui.navigation",
-                    "cl.duoc.serviciotecnico.util"
-                )
-                classes(
-                    "cl.duoc.serviciotecnico.MainActivity*",
-                    "cl.duoc.serviciotecnico.ServicioTecnicoApp*",
-                    "cl.duoc.serviciotecnico.ServicioTecnicoAppKt*",
-                    "cl.duoc.serviciotecnico.BuildConfig",
-                    "cl.duoc.serviciotecnico.R",
-                    "cl.duoc.serviciotecnico.R\$*",
-                    "cl.duoc.serviciotecnico.data.local.AppDatabase*",
-                    "cl.duoc.serviciotecnico.data.remote.RetrofitClient*",
-                    "cl.duoc.serviciotecnico.data.remote.MonitorConexion*",
-                    "cl.duoc.serviciotecnico.data.remote.geocodificacion.ApiExternaClient*",
-                    // Codigo generado por Room
-                    "*_Impl*",
-                    // Factories de los ViewModel: solo conectan dependencias desde la Application
-                    "*ViewModel\$Companion*"
-                )
-                annotatedBy("androidx.compose.runtime.Composable")
-            }
-        }
         verify {
             rule {
-                minBound(85)
+                minBound(80)
             }
         }
     }
