@@ -36,8 +36,8 @@ Asignatura **DSY1105 — Desarrollo de Aplicaciones Móviles** · Evaluación Pa
 | Joaquin Perez | Detalle del ticket, cambio de estado y guías de servicio |
 | Carlos Lobos  | Cámara, ubicación, permisos, animaciones, API externa, pruebas, despliegue y documentación |
 
-- Repositorio (público): [completar enlace de GitHub]
-- Planificación: [completar enlace del tablero de GitHub Projects] — autorizado por el docente
+- Repositorio (público): (https://github.com/joako-aux/Tac-Tech.git)
+- Planificación: (https://github.com/users/joako-aux/projects/4/views/1?filterQuery=) — autorizado por el docente
   en reemplazo de Trello.
 
 ## Funcionalidades
